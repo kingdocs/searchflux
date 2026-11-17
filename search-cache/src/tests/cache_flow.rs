@@ -101,3 +101,77 @@ fn test_persistent_roundtrip() {
     .unwrap();
     assert_eq!(loaded.get_total_files(), original_total);
 }
+
+/// 目录型忽略规则（`.*/`）不能被 FSEvents 增量扫描绕过。
+///
+/// 现象：冷启动加载持久化缓存后，`.config` 之类点开头的目录又出现在结果里；
+/// 到设置里重新保存一次（触发全盘重建）才消失。
+/// 根因：`scan_path_recursive` 只判目标 entry 自己的名字，而 `create_node_chain`
+/// 逐级补父链时完全不看规则，于是"点目录下某个文件"的事件把被排除的祖先目录
+/// 重新挂回索引，随后被写进持久化缓存。
+#[test]
+fn incremental_event_under_ignored_dir_does_not_revive_it() {
+    use cardinal_sdk::{EventFlag, FsEvent};
+    use fswalk::{FileNameRules, WalkData};
+    use std::{
+        ffi::OsStr,
+        path::Path,
+        sync::{Arc, atomic::Ordering},
+    };
+
+    fn cache_with_dir_rules(root: &Path) -> SearchCache {
+        let rules = Arc::new(FileNameRules::from_lines([".*/"]));
+        let empty: Vec<PathBuf> = Vec::new();
+        let walk_data = WalkData::new(root, &empty, &empty, false, || {
+            NEVER_STOPPED.load(Ordering::Relaxed)
+        })
+        .with_file_name_rules(rules);
+        SearchCache::walk_fs_with_walk_data(&walk_data, &NEVER_STOPPED).unwrap()
+    }
+
+    fn contains_segment(cache: &SearchCache, name: &str) -> bool {
+        cache
+            .search_empty(CancellationToken::noop())
+            .unwrap()
+            .iter()
+            .any(|&idx| {
+                cache.node_path(idx).is_some_and(|p| {
+                    p.components()
+                        .any(|c| c.as_os_str() == OsStr::new(name))
+                })
+            })
+    }
+
+    let tmp = TempDir::new("ignore_dir_incremental").unwrap();
+    let root = tmp.path();
+    fs::create_dir_all(root.join(".config/inner")).unwrap();
+    fs::write(root.join(".config/inner/note.txt"), b"needle").unwrap();
+    fs::create_dir_all(root.join("normal")).unwrap();
+    fs::write(root.join("normal/ok.txt"), b"needle").unwrap();
+
+    let mut cache = cache_with_dir_rules(root);
+    assert!(
+        !contains_segment(&cache, ".config"),
+        "初次全量扫描就应排除 .config"
+    );
+    assert!(contains_segment(&cache, "normal"));
+
+    // FSEvents 通常只报告被排除目录下某个具体文件，而不是那个目录本身。
+    let id = cache.last_event_id() + 1;
+    cache
+        .handle_fs_events(vec![FsEvent {
+            path: root.join(".config/inner/note.txt"),
+            id,
+            flag: EventFlag::ItemCreated,
+        }])
+        .unwrap();
+
+    assert!(
+        !contains_segment(&cache, ".config"),
+        "增量事件不得把被忽略的点目录（及其父链）重新挂回索引"
+    );
+    assert!(
+        cache.search("note.txt").unwrap().is_empty(),
+        "被排除目录下的文件也不应重新进入索引"
+    );
+}

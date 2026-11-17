@@ -767,6 +767,25 @@ impl SearchCache {
             self.remove_node_path(path);
             return None;
         }
+        // [fix] 目录规则按"名字"匹配，`should_ignore` 只判目标 entry 自己，
+        // 看不到祖先。FSEvents 增量事件常指向被排除目录下某个具体文件，
+        // 若直接往下走，create_node_chain(parent) 会逐级把 `.config` 之类
+        // 目录补回索引，随后写进持久化缓存 —— 冷启动加载后这些目录就"复活"了。
+        // 这里沿父链补一次目录规则检查；命中时连同子树摘掉，旧脏节点也能自愈。
+        let root = self.file_nodes.path().to_path_buf();
+        let mut ancestor = path.parent();
+        while let Some(dir) = ancestor {
+            if dir == root {
+                break;
+            }
+            if let Some(name) = dir.file_name() {
+                if self.file_nodes.file_name_rules().is_ignored_dir(name) {
+                    self.remove_node_path(dir);
+                    return None;
+                }
+            }
+            ancestor = dir.parent();
+        }
         let parent = path.parent().expect(
             "scan_path_recursive doesn't expected to scan root(should be filtered outside)",
         );

@@ -15,10 +15,14 @@ use typed_num::Num;
 /// 个人自用版：上游为 6，本改造在 `PersistentStorage` 里新增了
 /// `ignore_file_rules_digest` 字段，格式已不兼容。
 ///
-/// 刻意取 1007 而不是 7：上游若把版本升到 7、8、9，也不会与本地的
+/// 刻意取 1007 起步而不是 7：上游若把版本升到 7、8、9，也不会与本地的
 /// 「版本号相同但字段不同」撞车（那种情况反序列化会失败在字段层，报错更晦涩）。
 /// 版本号不一致时 `read_cache_from_file` 会直接放弃缓存并触发全量重建，属正常降级。
-const LSF_VERSION: i64 = 1007;
+///
+/// 1008：修复增量扫描把被忽略的点目录补回索引后，1007 的缓存可能已经带着
+/// 这些脏节点，且规则指纹与内容不一致（digest 匹配就不会触发重建）。
+/// 升一位让所有旧快照一次性失效，冷启动按当前规则全量重建一次。
+const LSF_VERSION: i64 = 1008;
 
 #[derive(Serialize, Deserialize)]
 pub struct PersistentStorage {
