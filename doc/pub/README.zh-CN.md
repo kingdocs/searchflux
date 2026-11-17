@@ -38,7 +38,7 @@
 brew install --cask cardinal-search
 ```
 
-你也可以从 [GitHub Releases](https://github.com/cardisoft/cardinal/releases/) 获取最新的安装包。
+你也可以从 [GitHub Releases](https://github.com/kingdocs/searchflux/releases/) 获取最新的安装包。
 
 ### 国际化支持
 

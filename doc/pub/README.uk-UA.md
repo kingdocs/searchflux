@@ -23,7 +23,7 @@
 brew install --cask cardinal-search
 ```
 
-Або завантажте найсвіжіші пакети з [GitHub Releases](https://github.com/cardisoft/cardinal/releases/).
+Або завантажте найсвіжіші пакети з [GitHub Releases](https://github.com/kingdocs/searchflux/releases/).
 
 ### Підтримка i18n
 

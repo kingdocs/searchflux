@@ -23,7 +23,7 @@ Homebrew でインストール:
 brew install --cask cardinal-search
 ```
 
-[GitHub Releases](https://github.com/cardisoft/cardinal/releases/) から最新のパッケージ版を入手することもできます。
+[GitHub Releases](https://github.com/kingdocs/searchflux/releases/) から最新のパッケージ版を入手することもできます。
 
 ### 国際化サポート
 

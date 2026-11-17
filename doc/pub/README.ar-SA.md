@@ -23,7 +23,7 @@
 brew install --cask cardinal-search
 ```
 
-كما يمكنك تنزيل أحدث الحزم من [GitHub Releases](https://github.com/cardisoft/cardinal/releases/).
+كما يمكنك تنزيل أحدث الحزم من [GitHub Releases](https://github.com/kingdocs/searchflux/releases/).
 
 ### دعم تعدد اللغات
 

@@ -23,7 +23,7 @@ Installez via Homebrew :
 brew install --cask cardinal-search
 ```
 
-Vous pouvez aussi récupérer les derniers paquets sur [GitHub Releases](https://github.com/cardisoft/cardinal/releases/).
+Vous pouvez aussi récupérer les derniers paquets sur [GitHub Releases](https://github.com/kingdocs/searchflux/releases/).
 
 ### Prise en charge i18n
 

@@ -38,7 +38,7 @@ Use homebrew:
 brew install --cask cardinal-search
 ```
 
-You can also grab the latest packaged builds from [GitHub Releases](https://github.com/cardisoft/cardinal/releases/).
+You can also grab the latest packaged builds from [GitHub Releases](https://github.com/kingdocs/searchflux/releases/).
 
 ### i18n support
 
